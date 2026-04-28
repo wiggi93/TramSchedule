@@ -24,6 +24,7 @@ font_path = os.path.join(script_dir, 'fonts/4x6.bdf')
 # Just static strings (no scrolling offsets)
 tram_lines = ["waiting for departures", "", "", ""]
 lock = threading.Lock()
+MAX_DEST_LEN = 9
 
 if not DEBUG:
     class RunText(SampleBase):
@@ -66,7 +67,7 @@ if not DEBUG:
                         graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
                         # destination in orange, waiting time in white
                         graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, destColor, text[2:12])
-                        graphics.DrawText(offscreen_canvas, font, badge_width + 41, y, timeColor, text[12:])
+                        graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, timeColor, text[12:])
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -111,27 +112,27 @@ def parse_departures(stop_events):
     return departures
 
 def additional_task():
-    global tram_lines, lock
-    max_dest_len = 9  # optional: limit to prevent overflow
-
     while True:
-        events = fetch_departures()
-        parsed = sorted(parse_departures(events), key=lambda x: x[2])
+        try:
+            events = fetch_departures()
+            parsed = sorted(parse_departures(events), key=lambda x: x[2])
 
-        with lock:
-            for i in range(4):
-                if i < len(parsed):
-                    line, dest, mins = parsed[i]
-                    dest_trimmed = dest[:max_dest_len].rstrip('/ ')
-                    tram_lines[i] = f"{line:<2} {dest_trimmed:<{max_dest_len}} {mins:>2} min"
-                    print(f"→ {line} to {dest} in {mins} min")
-                else:
-                    tram_lines[i] = ""
+            with lock:
+                for i in range(4):
+                    if i < len(parsed):
+                        line, dest, mins = parsed[i]
+                        dest_trimmed = dest[:MAX_DEST_LEN].rstrip('/ ')
+                        tram_lines[i] = f"{line:<2} {dest_trimmed:<{MAX_DEST_LEN}} {mins:>2} min"
+                        print(f"→ {line} to {dest} in {mins} min")
+                    else:
+                        tram_lines[i] = ""
 
-            if not parsed:
-                tram_lines[0] = "waiting for departures"
-                for j in range(1, 4):
-                    tram_lines[j] = ""
+                if not parsed:
+                    tram_lines[0] = "waiting for departures"
+                    for j in range(1, 4):
+                        tram_lines[j] = ""
+        except Exception as e:
+            print(f"Error in fetch loop: {e}")
 
         time.sleep(30)
 
