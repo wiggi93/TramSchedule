@@ -23,6 +23,7 @@ font_path = os.path.join(script_dir, 'fonts/4x6.bdf')
 
 # Just static strings (no scrolling offsets)
 tram_lines = ["waiting for departures", "", "", ""]
+tram_changed = [0.0] * 4  # timestamps of last time-field change per row
 lock = threading.Lock()
 MAX_DEST_LEN = 9
 
@@ -65,9 +66,15 @@ if not DEBUG:
                             graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
                         # line number in dark on badge
                         graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
-                        # destination in orange, waiting time in white
+                        # destination in orange, waiting time: yellow→white fade on change
                         graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, destColor, text[2:12])
-                        graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, timeColor, text[12:])
+                        elapsed = time.time() - tram_changed[i]
+                        if elapsed < 1.5:
+                            b = int(min(1.0, elapsed / 1.5) * 255)
+                            time_color_line = graphics.Color(255, 255, b)
+                        else:
+                            time_color_line = timeColor
+                        graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, time_color_line, text[12:])
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -122,7 +129,10 @@ def additional_task():
                     if i < len(parsed):
                         line, dest, mins = parsed[i]
                         dest_trimmed = dest[:MAX_DEST_LEN].rstrip('/ ')
-                        tram_lines[i] = f"{line:<2} {dest_trimmed:<{MAX_DEST_LEN}} {mins:>2} min"
+                        new_line = f"{line:<2} {dest_trimmed:<{MAX_DEST_LEN}} {mins:>2} min"
+                        if tram_lines[i][12:] != new_line[12:]:
+                            tram_changed[i] = time.time()
+                        tram_lines[i] = new_line
                         print(f"→ {line} to {dest} in {mins} min")
                     else:
                         tram_lines[i] = ""
@@ -141,6 +151,7 @@ DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 def debug_display():
     ORANGE    = "\033[38;2;255;127;80m"
     WHITE     = "\033[38;2;255;255;255m"
+    YELLOW    = "\033[38;2;255;255;0m"
     BADGE_BG  = "\033[48;2;255;0;0m"
     RESET     = "\033[0m"
     CLEAR     = "\033[2J\033[H"
@@ -149,15 +160,17 @@ def debug_display():
     while True:
         with lock:
             lines = list(tram_lines)
+        changed = list(tram_changed)
 
         out = [CLEAR, f"┌{border}┐"]
-        for text in lines:
+        for j, text in enumerate(lines):
             if text.strip():
                 num  = text[:2]
                 dest_part = text[2:12]
                 time_part = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
                 badge = f"{BADGE_BG}{WHITE}{num}{RESET}"
-                out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{WHITE}{time_part}{RESET}│")
+                t_color = YELLOW if time.time() - changed[j] < 1.5 else WHITE
+                out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│")
             else:
                 out.append(f"│{' ' * DISPLAY_WIDTH}│")
         out.append(f"└{border}┘")
