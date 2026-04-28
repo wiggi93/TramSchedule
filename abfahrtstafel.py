@@ -46,13 +46,25 @@ if not DEBUG:
                 return
 
             textColor = graphics.Color(255, 127, 80)
+            badgeBg   = graphics.Color(255, 127, 80)
+            badgeText = graphics.Color(0, 0, 0)
             line_height = 6
+            badge_width = 9  # pixels wide for 2-char number + padding
 
             while True:
                 offscreen_canvas.Clear()
                 with lock:
                     for i, text in enumerate(tram_lines):
-                        graphics.DrawText(offscreen_canvas, font, 0, (i + 1) * line_height, textColor, text)
+                        if not text.strip():
+                            continue
+                        y = (i + 1) * line_height
+                        # filled badge background
+                        for fy in range(y - line_height + 1, y + 1):
+                            graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
+                        # line number in dark on badge
+                        graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
+                        # destination + time in orange
+                        graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, textColor, text[2:])
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -124,9 +136,11 @@ def additional_task():
 DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 
 def debug_display():
-    ORANGE = "\033[38;2;255;127;80m"
-    RESET  = "\033[0m"
-    CLEAR  = "\033[2J\033[H"
+    ORANGE    = "\033[38;2;255;127;80m"
+    BADGE_BG  = "\033[48;2;255;127;80m"
+    BADGE_FG  = "\033[38;2;0;0;0m"
+    RESET     = "\033[0m"
+    CLEAR     = "\033[2J\033[H"
     border = "─" * DISPLAY_WIDTH
 
     while True:
@@ -135,7 +149,13 @@ def debug_display():
 
         out = [CLEAR, f"┌{border}┐"]
         for text in lines:
-            out.append(f"│{ORANGE}{text:<{DISPLAY_WIDTH}}{RESET}│")
+            if text.strip():
+                num  = text[:2]
+                rest = f"{text[2:]:<{DISPLAY_WIDTH - 2}}"
+                badge = f"{BADGE_BG}{BADGE_FG}{num}{RESET}"
+                out.append(f"│{badge}{ORANGE}{rest}{RESET}│")
+            else:
+                out.append(f"│{' ' * DISPLAY_WIDTH}│")
         out.append(f"└{border}┘")
         out.append(f"  {ORANGE}[debug]{RESET}  refreshes every 0.5 s, data every 30 s")
         print("\n".join(out), end="", flush=True)
