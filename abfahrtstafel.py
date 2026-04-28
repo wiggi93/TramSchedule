@@ -47,7 +47,7 @@ if not DEBUG:
 
             textColor = graphics.Color(255, 127, 80)
             badgeBg   = graphics.Color(255, 0, 0)
-            badgeText = graphics.Color(0, 0, 0)
+            badgeText = graphics.Color(255, 255, 255)
             line_height = 6
             badge_width = 9  # pixels wide for 2-char number + padding
 
@@ -138,7 +138,7 @@ DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 def debug_display():
     ORANGE    = "\033[38;2;255;127;80m"
     BADGE_BG  = "\033[48;2;255;0;0m"
-    BADGE_FG  = "\033[38;2;0;0;0m"
+    BADGE_FG  = "\033[38;2;255;255;255m"
     RESET     = "\033[0m"
     CLEAR     = "\033[2J\033[H"
     border = "─" * DISPLAY_WIDTH
