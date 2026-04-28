@@ -141,7 +141,6 @@ def debug_display():
     ORANGE    = "\033[38;2;255;127;80m"
     WHITE     = "\033[38;2;255;255;255m"
     BADGE_BG  = "\033[48;2;255;0;0m"
-    BADGE_FG  = "\033[38;2;255;255;255m"
     RESET     = "\033[0m"
     CLEAR     = "\033[2J\033[H"
     border = "─" * DISPLAY_WIDTH
@@ -156,7 +155,7 @@ def debug_display():
                 num  = text[:2]
                 dest_part = text[2:12]
                 time_part = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
-                badge = f"{BADGE_BG}{BADGE_FG}{num}{RESET}"
+                badge = f"{BADGE_BG}{WHITE}{num}{RESET}"
                 out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{WHITE}{time_part}{RESET}│")
             else:
                 out.append(f"│{' ' * DISPLAY_WIDTH}│")
