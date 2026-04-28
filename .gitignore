@@ -1,2 +1,4 @@
 .DS_Store
 settings.local.json
+__pycache__/
+*.pyc
