@@ -45,7 +45,8 @@ if not DEBUG:
                 print(f"Error loading font: {e}")
                 return
 
-            textColor = graphics.Color(255, 255, 255)
+            destColor = graphics.Color(255, 127, 80)
+            timeColor = graphics.Color(255, 255, 255)
             badgeBg   = graphics.Color(255, 0, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
@@ -63,8 +64,9 @@ if not DEBUG:
                             graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
                         # line number in dark on badge
                         graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
-                        # destination + time in orange
-                        graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, textColor, text[2:])
+                        # destination in orange, waiting time in white
+                        graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, destColor, text[2:12])
+                        graphics.DrawText(offscreen_canvas, font, badge_width + 41, y, timeColor, text[12:])
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -136,7 +138,8 @@ def additional_task():
 DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 
 def debug_display():
-    ORANGE    = "\033[38;2;255;255;255m"
+    ORANGE    = "\033[38;2;255;127;80m"
+    WHITE     = "\033[38;2;255;255;255m"
     BADGE_BG  = "\033[48;2;255;0;0m"
     BADGE_FG  = "\033[38;2;255;255;255m"
     RESET     = "\033[0m"
@@ -151,9 +154,10 @@ def debug_display():
         for text in lines:
             if text.strip():
                 num  = text[:2]
-                rest = f"{text[2:]:<{DISPLAY_WIDTH - 2}}"
+                dest_part = text[2:12]
+                time_part = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
                 badge = f"{BADGE_BG}{BADGE_FG}{num}{RESET}"
-                out.append(f"│{badge}{ORANGE}{rest}{RESET}│")
+                out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{WHITE}{time_part}{RESET}│")
             else:
                 out.append(f"│{' ' * DISPLAY_WIDTH}│")
         out.append(f"└{border}┘")
