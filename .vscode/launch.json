@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug (terminal mode)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/abfahrtstafel.py",
+            "args": ["--debug"],
+            "console": "integratedTerminal"
+        }
+    ]
+}
