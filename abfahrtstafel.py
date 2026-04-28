@@ -108,7 +108,8 @@ def additional_task():
             for i in range(4):
                 if i < len(parsed):
                     line, dest, mins = parsed[i]
-                    tram_lines[i] = f"{line:<2} {dest[:max_dest_len]:<{max_dest_len}} {mins:>2} min"
+                    dest_trimmed = dest[:max_dest_len].rstrip('/ ')
+                    tram_lines[i] = f"{line:<2} {dest_trimmed:<{max_dest_len}} {mins:>2} min"
                     print(f"→ {line} to {dest} in {mins} min")
                 else:
                     tram_lines[i] = ""
