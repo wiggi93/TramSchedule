@@ -45,7 +45,7 @@ if not DEBUG:
                 print(f"Error loading font: {e}")
                 return
 
-            textColor = graphics.Color(255, 127, 80)
+            textColor = graphics.Color(255, 255, 255)
             badgeBg   = graphics.Color(255, 0, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
@@ -136,7 +136,7 @@ def additional_task():
 DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 
 def debug_display():
-    ORANGE    = "\033[38;2;255;127;80m"
+    ORANGE    = "\033[38;2;255;255;255m"
     BADGE_BG  = "\033[48;2;255;0;0m"
     BADGE_FG  = "\033[38;2;255;255;255m"
     RESET     = "\033[0m"
