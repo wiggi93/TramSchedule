@@ -52,7 +52,7 @@ if not DEBUG:
             badgeBg   = graphics.Color(255, 0, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
-            badge_width = 9  # pixels wide for 2-char number + padding
+            badge_width = 8  # pixels wide for 2-char number + padding
 
             while True:
                 offscreen_canvas.Clear()
