@@ -49,7 +49,7 @@ if not DEBUG:
 
             destColor = graphics.Color(255, 127, 80)
             timeColor = graphics.Color(255, 255, 255)
-            badgeBg   = graphics.Color(0, 140, 0)
+            badgeBg   = graphics.Color(0, 70, 200)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
             badge_width = 6  # pixels wide for 1-char number + 1px padding each side
@@ -76,8 +76,8 @@ if not DEBUG:
                         else:
                             time_color_line = timeColor
                         graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, time_color_line, text[12:])
-                now_str = datetime.now().strftime("%H:%M")
-                graphics.DrawText(offscreen_canvas, font, 64 - len(now_str) * 4, 31, clockColor, now_str)
+                now_str = datetime.now().strftime("%H:%M:%S")
+                graphics.DrawText(offscreen_canvas, font, (64 - len(now_str) * 4) // 2, 31, clockColor, now_str)
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -155,7 +155,7 @@ def debug_display():
     ORANGE    = "\033[38;2;255;127;80m"
     WHITE     = "\033[38;2;255;255;255m"
     YELLOW    = "\033[38;2;255;255;0m"
-    BADGE_BG  = "\033[48;2;0;140;0m"
+    BADGE_BG  = "\033[48;2;0;70;200m"
     RESET     = "\033[0m"
     CLEAR     = "\033[2J\033[H"
     border = "─" * DISPLAY_WIDTH
@@ -165,8 +165,8 @@ def debug_display():
             lines = list(tram_lines)
         changed = list(tram_changed)
 
-        now_str = datetime.now().strftime("%H:%M")
-        clock_line = f"{now_str:>{DISPLAY_WIDTH}}"
+        now_str = datetime.now().strftime("%H:%M:%S")
+        clock_line = f"{now_str:^{DISPLAY_WIDTH}}"
         out = [CLEAR, f"┌{border}┐"]
         for j, text in enumerate(lines):
             if text.strip():
