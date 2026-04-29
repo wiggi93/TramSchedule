@@ -49,7 +49,7 @@ if not DEBUG:
 
             destColor = graphics.Color(255, 127, 80)
             timeColor = graphics.Color(255, 255, 255)
-            badgeBg   = graphics.Color(255, 0, 0)
+            badgeBg   = graphics.Color(0, 140, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
             row_height = 7  # line_height + 1px gap between rows
@@ -153,7 +153,7 @@ def debug_display():
     ORANGE    = "\033[38;2;255;127;80m"
     WHITE     = "\033[38;2;255;255;255m"
     YELLOW    = "\033[38;2;255;255;0m"
-    BADGE_BG  = "\033[48;2;255;0;0m"
+    BADGE_BG  = "\033[48;2;0;140;0m"
     RESET     = "\033[0m"
     CLEAR     = "\033[2J\033[H"
     border = "─" * DISPLAY_WIDTH
