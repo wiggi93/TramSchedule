@@ -52,6 +52,7 @@ if not DEBUG:
             badgeBg   = graphics.Color(255, 0, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
+            row_height = 7  # line_height + 1px gap between rows
             badge_width = 6  # pixels wide for 1-char number + 1px padding each side
 
             while True:
@@ -60,7 +61,7 @@ if not DEBUG:
                     for i, text in enumerate(tram_lines):
                         if not text.strip():
                             continue
-                        y = (i + 1) * line_height
+                        y = line_height + i * row_height
                         # filled badge background
                         for fy in range(y - line_height + 1, y + 1):
                             graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
@@ -129,7 +130,7 @@ def additional_task():
                     if i < len(parsed):
                         line, dest, mins = parsed[i]
                         dest_trimmed = dest[:MAX_DEST_LEN].rstrip('/ ')
-                        new_line = f"{line:<2} {dest_trimmed:<{MAX_DEST_LEN}} {mins:>2} min"
+                        new_line = f"{line:<2} {dest_trimmed:<{MAX_DEST_LEN}} {mins:>2}"
                         if tram_lines[i][12:] != new_line[12:]:
                             tram_changed[i] = time.time()
                         tram_lines[i] = new_line
