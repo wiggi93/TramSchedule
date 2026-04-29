@@ -52,8 +52,8 @@ if not DEBUG:
             badgeBg   = graphics.Color(0, 140, 0)
             badgeText = graphics.Color(255, 255, 255)
             line_height = 6
-            row_height = 7  # line_height + 1px gap between rows
             badge_width = 6  # pixels wide for 1-char number + 1px padding each side
+            clockColor = graphics.Color(180, 180, 180)
 
             while True:
                 offscreen_canvas.Clear()
@@ -61,7 +61,7 @@ if not DEBUG:
                     for i, text in enumerate(tram_lines):
                         if not text.strip():
                             continue
-                        y = line_height + i * row_height
+                        y = line_height + i * line_height
                         # filled badge background
                         for fy in range(y - line_height + 1, y + 1):
                             graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
@@ -76,6 +76,8 @@ if not DEBUG:
                         else:
                             time_color_line = timeColor
                         graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, time_color_line, text[12:])
+                now_str = datetime.now().strftime("%H:%M")
+                graphics.DrawText(offscreen_canvas, font, 64 - len(now_str) * 4, 31, clockColor, now_str)
                 time.sleep(0.1)
                 offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
@@ -163,6 +165,8 @@ def debug_display():
             lines = list(tram_lines)
         changed = list(tram_changed)
 
+        now_str = datetime.now().strftime("%H:%M")
+        clock_line = f"{now_str:>{DISPLAY_WIDTH}}"
         out = [CLEAR, f"┌{border}┐"]
         for j, text in enumerate(lines):
             if text.strip():
@@ -174,6 +178,7 @@ def debug_display():
                 out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│")
             else:
                 out.append(f"│{' ' * DISPLAY_WIDTH}│")
+        out.append(f"│{WHITE}{clock_line}{RESET}│")
         out.append(f"└{border}┘")
         out.append(f"  {ORANGE}[debug]{RESET}  refreshes every 0.5 s, data every 30 s")
         print("\n".join(out), end="", flush=True)
