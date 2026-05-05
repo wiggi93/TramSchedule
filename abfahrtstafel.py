@@ -39,7 +39,7 @@ if not DEBUG:
             )
 
         def run(self):
-            global tram_lines
+            global tram_lines, tram_full_dest
             offscreen_canvas = self.matrix.CreateFrameCanvas()
             font = graphics.Font()
             try:
@@ -59,24 +59,29 @@ if not DEBUG:
             while True:
                 offscreen_canvas.Clear()
                 with lock:
-                    for i, text in enumerate(tram_lines):
-                        if not text.strip():
-                            continue
-                        y = line_height + i * line_height
-                        # filled badge background
-                        for fy in range(y - line_height + 1, y + 1):
-                            graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
-                        # line number in dark on badge
-                        graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
-                        # destination in orange, waiting time: yellow→white fade on change
-                        graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, destColor, text[2:12])
-                        elapsed = time.time() - tram_changed[i]
-                        if elapsed < 1.5:
-                            b = int(min(1.0, elapsed / 1.5) * 255)
-                            time_color_line = graphics.Color(255, 255, b)
-                        else:
-                            time_color_line = timeColor
-                        graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, time_color_line, text[12:])
+                    snap_lines = list(tram_lines)
+                    snap_dests = list(tram_full_dest)
+                for i, text in enumerate(snap_lines):
+                    if not text.strip():
+                        continue
+                    y = line_height + i * line_height
+                    # filled badge background
+                    for fy in range(y - line_height + 1, y + 1):
+                        graphics.DrawLine(offscreen_canvas, 0, fy, badge_width - 1, fy, badgeBg)
+                    # line number in badge
+                    graphics.DrawText(offscreen_canvas, font, 1, y, badgeText, text[:2].strip())
+                    # destination with scrolling
+                    full_dest = snap_dests[i]
+                    off = _scroll_offset(i, len(full_dest))
+                    dest_shown = f" {full_dest[off:off + MAX_DEST_LEN]:<{MAX_DEST_LEN}}"
+                    graphics.DrawText(offscreen_canvas, font, badge_width + 1, y, destColor, dest_shown)
+                    elapsed = time.time() - tram_changed[i]
+                    if elapsed < 1.5:
+                        b = int(min(1.0, elapsed / 1.5) * 255)
+                        time_color_line = graphics.Color(255, 255, b)
+                    else:
+                        time_color_line = timeColor
+                    graphics.DrawText(offscreen_canvas, font, badge_width + 1 + (1 + MAX_DEST_LEN) * 4, y, time_color_line, text[12:])
                 now_str = datetime.now().strftime("%H:%M:%S")
                 graphics.DrawText(offscreen_canvas, font, (64 - len(now_str) * 4) // 2, 31, clockColor, now_str)
                 time.sleep(0.1)
