@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from dataclasses import dataclass, field
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -113,7 +114,7 @@ def parse_departures(events: list[dict]) -> list[Departure]:
         if transport.get("product", {}).get("class") != STADTBAHN_CLASS:
             continue
         line        = transport.get("number", "?")
-        destination = transport.get("destination", {}).get("name", "?").rstrip("/ ")
+        destination = re.sub(r"\s*\(.*?\)", "", transport.get("destination", {}).get("name", "?")).rstrip("/ ")
         dep_str     = event.get("departureTimeEstimated") or event.get("departureTimePlanned")
         if not dep_str:
             continue
