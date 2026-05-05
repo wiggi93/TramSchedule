@@ -9,8 +9,8 @@ _pre_args, _ = _pre_parser.parse_known_args()
 DEBUG = _pre_args.debug
 
 if not DEBUG:
-    from samplebase import SampleBase
-    from rgbmatrix import graphics
+    from samplebase import SampleBase  # type: ignore
+    from rgbmatrix import graphics  # type: ignore
 
 
 from datetime import datetime, timezone
