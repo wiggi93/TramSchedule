@@ -33,8 +33,11 @@ API_VERSION      = "10.6.14.22"
 STADTBAHN_CLASS  = 3     # product.class value for Stadtbahn lines
 
 DISPLAY_ROWS     = 4
-MAX_DEST_LEN     = 9     # destination characters shown at once on the display
+MAX_DEST_LEN     = 9     # destination characters shown at once in the debug terminal
 FONT_PATH        = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts/4x6.bdf")
+
+LED_COLS         = 64    # pixel width of the LED matrix
+CHAR_WIDTH       = 4     # pixels per character in the 4x6 font
 
 FETCH_INTERVAL   = 30    # seconds between API polls
 REQUEST_TIMEOUT  = 10    # seconds before an HTTP request is abandoned
@@ -137,8 +140,8 @@ def fetch_loop(board: BoardState) -> None:
 
 # ── Scroll helpers ────────────────────────────────────────────────────────────
 
-def scroll_offset(row: int, dest_len: int) -> int:
-    max_off = max(0, dest_len - MAX_DEST_LEN)
+def scroll_offset(row: int, dest_len: int, visible: int = MAX_DEST_LEN) -> int:
+    max_off = max(0, dest_len - visible)
     if max_off == 0:
         return 0
     scroll_dur = max_off * SCROLL_SPEED
@@ -179,7 +182,11 @@ if not DEBUG:
             badge_text  = graphics.Color(255, 255, 255)
             clock_color = graphics.Color(180, 180, 180)
             line_height = 6
-            badge_width = 6  # 1-char number + 1px padding on each side
+            badge_width = 6   # 1-char number + 1px padding on each side
+            dest_x      = badge_width + 1                      # 7 — destination text origin
+            time_x      = LED_COLS - 2 * CHAR_WIDTH            # 56 — right-align 2-digit minutes
+            # available pixels between dest_x and time_x, minus 1 leading-space char
+            led_dest_visible = (time_x - dest_x) // CHAR_WIDTH - 1   # = 11
 
             while True:
                 canvas.Clear()
@@ -193,9 +200,9 @@ if not DEBUG:
                         graphics.DrawLine(canvas, 0, fy, badge_width - 1, fy, badge_bg)
                     graphics.DrawText(canvas, font, 1, y, badge_text, dep.line[:2])
 
-                    off        = scroll_offset(i, len(dep.destination))
-                    dest_shown = f" {dep.destination[off:off + MAX_DEST_LEN]:<{MAX_DEST_LEN}}"
-                    graphics.DrawText(canvas, font, badge_width + 1, y, dest_color, dest_shown)
+                    off        = scroll_offset(i, len(dep.destination), led_dest_visible)
+                    dest_shown = f" {dep.destination[off:off + led_dest_visible]:<{led_dest_visible}}"
+                    graphics.DrawText(canvas, font, dest_x, y, dest_color, dest_shown)
 
                     elapsed = time.time() - changed_at[i]
                     if elapsed < 1.5:
@@ -203,7 +210,6 @@ if not DEBUG:
                         row_time_color = graphics.Color(255, 255, b)
                     else:
                         row_time_color = time_color
-                    time_x = badge_width + 1 + (1 + MAX_DEST_LEN) * 4
                     graphics.DrawText(canvas, font, time_x, y, row_time_color, f"{dep.minutes:>2}")
 
                 now_str = datetime.now().strftime("%H:%M:%S")
@@ -241,8 +247,7 @@ def debug_display(board: BoardState) -> None:
                 off        = scroll_offset(j, len(dep.destination))
                 dest_shown = dep.destination[off:off + MAX_DEST_LEN]
                 dest_part  = f" {dest_shown:<{MAX_DEST_LEN}}"
-                mins_str   = f"{dep.minutes:>2}"
-                time_part  = f"{mins_str:<{DISPLAY_WIDTH - 12}}"
+                time_part  = f"{dep.minutes:>{DISPLAY_WIDTH - 12}}"
                 badge      = f"{BADGE_BG}{WHITE}{dep.line[:2]:<2}{RESET}"
                 t_color    = YELLOW if time.time() - changed_at[j] < 1.5 else WHITE
                 out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│{ERASE_EOL}")
