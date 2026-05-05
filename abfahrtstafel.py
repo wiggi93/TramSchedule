@@ -1,4 +1,4 @@
-#!/home/philip/rpi-rgb-led-matrix/venv/bin/python
+#!/usr/bin/env python3
 
 import argparse
 import sys
@@ -11,6 +11,7 @@ DEBUG = _pre_args.debug
 if not DEBUG:
     from samplebase import SampleBase
     from rgbmatrix import graphics
+
 
 from datetime import datetime, timezone
 import requests
@@ -152,14 +153,16 @@ def additional_task():
 DISPLAY_WIDTH = 22  # chars wide for debug terminal output
 
 def debug_display():
-    ORANGE    = "\033[38;2;255;127;80m"
-    WHITE     = "\033[38;2;255;255;255m"
-    YELLOW    = "\033[38;2;255;255;0m"
-    BADGE_BG  = "\033[48;2;0;70;200m"
-    RESET     = "\033[0m"
-    CLEAR     = "\033[2J\033[H"
+    ORANGE     = "\033[38;2;255;127;80m"
+    WHITE      = "\033[38;2;255;255;255m"
+    YELLOW     = "\033[38;2;255;255;0m"
+    BADGE_BG   = "\033[48;2;0;70;200m"
+    RESET      = "\033[0m"
+    ERASE_EOL  = "\033[K"
     border = "─" * DISPLAY_WIDTH
+    FRAME_LINES = 8  # total lines printed per frame
 
+    first = True
     while True:
         with lock:
             lines = list(tram_lines)
@@ -167,7 +170,11 @@ def debug_display():
 
         now_str = datetime.now().strftime("%H:%M:%S")
         clock_line = f"{now_str:^{DISPLAY_WIDTH}}"
-        out = [CLEAR, f"┌{border}┐"]
+
+        if not first:
+            sys.stdout.write(f"\033[{FRAME_LINES - 1}A\r")
+
+        out = [f"┌{border}┐{ERASE_EOL}"]
         for j, text in enumerate(lines):
             if text.strip():
                 num  = text[:2]
@@ -175,13 +182,14 @@ def debug_display():
                 time_part = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
                 badge = f"{BADGE_BG}{WHITE}{num}{RESET}"
                 t_color = YELLOW if time.time() - changed[j] < 1.5 else WHITE
-                out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│")
+                out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│{ERASE_EOL}")
             else:
-                out.append(f"│{' ' * DISPLAY_WIDTH}│")
-        out.append(f"│{WHITE}{clock_line}{RESET}│")
-        out.append(f"└{border}┘")
-        out.append(f"  {ORANGE}[debug]{RESET}  refreshes every 0.5 s, data every 30 s")
+                out.append(f"│{' ' * DISPLAY_WIDTH}│{ERASE_EOL}")
+        out.append(f"│{WHITE}{clock_line}{RESET}│{ERASE_EOL}")
+        out.append(f"└{border}┘{ERASE_EOL}")
+        out.append(f"  {ORANGE}[debug]{RESET}  refreshes every 0.5 s, data every 30 s{ERASE_EOL}")
         print("\n".join(out), end="", flush=True)
+        first = False
         time.sleep(0.5)
 
 
