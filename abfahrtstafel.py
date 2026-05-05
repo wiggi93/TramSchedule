@@ -22,9 +22,9 @@ import threading
 script_dir = os.path.dirname(os.path.abspath(__file__))
 font_path = os.path.join(script_dir, 'fonts/4x6.bdf')
 
-# Just static strings (no scrolling offsets)
-tram_lines = ["waiting for departures", "", "", ""]
-tram_changed = [0.0] * 4  # timestamps of last time-field change per row
+tram_lines     = ["waiting for departures", "", "", ""]
+tram_full_dest = [""] * 4          # full destination names for scrolling
+tram_changed   = [0.0] * 4         # timestamps of last time-field change per row
 lock = threading.Lock()
 MAX_DEST_LEN = 9
 
@@ -137,20 +137,41 @@ def additional_task():
                         if tram_lines[i][12:] != new_line[12:]:
                             tram_changed[i] = time.time()
                         tram_lines[i] = new_line
+                        tram_full_dest[i] = dest.rstrip('/ ')
                         print(f"→ {line} to {dest} in {mins} min")
                     else:
                         tram_lines[i] = ""
+                        tram_full_dest[i] = ""
 
                 if not parsed:
                     tram_lines[0] = "waiting for departures"
                     for j in range(1, 4):
                         tram_lines[j] = ""
+                        tram_full_dest[j] = ""
         except Exception as e:
             print(f"Error in fetch loop: {e}")
 
         time.sleep(30)
 
 DISPLAY_WIDTH = 22  # chars wide for debug terminal output
+
+SCROLL_PAUSE   = 3.5   # seconds to show static text before scrolling
+SCROLL_SPEED   = 0.38  # seconds per character shift
+SCROLL_HOLD    = 2.0   # seconds to hold at end before resetting
+SCROLL_STAGGER = 2.5   # seconds between rows so they don't scroll simultaneously
+
+def _scroll_offset(row, dest_len):
+    max_off = max(0, dest_len - MAX_DEST_LEN)
+    if max_off == 0:
+        return 0
+    scroll_dur = max_off * SCROLL_SPEED
+    cycle = SCROLL_PAUSE + scroll_dur + SCROLL_HOLD
+    t = (time.time() - row * SCROLL_STAGGER) % cycle
+    if t < SCROLL_PAUSE:
+        return 0
+    elif t < SCROLL_PAUSE + scroll_dur:
+        return int((t - SCROLL_PAUSE) / SCROLL_SPEED)
+    return max_off
 
 def debug_display():
     ORANGE     = "\033[38;2;255;127;80m"
@@ -165,7 +186,8 @@ def debug_display():
     first = True
     while True:
         with lock:
-            lines = list(tram_lines)
+            lines      = list(tram_lines)
+            full_dests = list(tram_full_dest)
         changed = list(tram_changed)
 
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -177,11 +199,14 @@ def debug_display():
         out = [f"┌{border}┐{ERASE_EOL}"]
         for j, text in enumerate(lines):
             if text.strip():
-                num  = text[:2]
-                dest_part = text[2:12]
-                time_part = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
-                badge = f"{BADGE_BG}{WHITE}{num}{RESET}"
-                t_color = YELLOW if time.time() - changed[j] < 1.5 else WHITE
+                num        = text[:2]
+                full_dest  = full_dests[j]
+                off        = _scroll_offset(j, len(full_dest))
+                dest_shown = full_dest[off:off + MAX_DEST_LEN]
+                dest_part  = f" {dest_shown:<{MAX_DEST_LEN}}"
+                time_part  = f"{text[12:]:<{DISPLAY_WIDTH - 12}}"
+                badge      = f"{BADGE_BG}{WHITE}{num}{RESET}"
+                t_color    = YELLOW if time.time() - changed[j] < 1.5 else WHITE
                 out.append(f"│{badge}{ORANGE}{dest_part}{RESET}{t_color}{time_part}{RESET}│{ERASE_EOL}")
             else:
                 out.append(f"│{' ' * DISPLAY_WIDTH}│{ERASE_EOL}")
