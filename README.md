@@ -14,11 +14,11 @@ python3 abfahrtstafel.py --debug
 
 ```
 ┌──────────────────────┐
-│10 Ahlem               3│
-│17 Rethen              7│
-│10 Ahlem              33│
-│17 Rethen             37│
-│       10:42:07        │
+│10 Ahlem             3│
+│17 Rethen            7│
+│10 Ahlem            33│
+│17 Rethen           37│
+│       10:42:07       │
 └──────────────────────┘
   [debug]  refreshes every 0.5s, data every 30s
 ```
@@ -82,7 +82,7 @@ All tuneable values are constants at the top of [`abfahrtstafel.py`](abfahrtstaf
 
 | Constant | Default | Description |
 |----------|---------|-------------|
-| `STOP_ID` | `de:03241:1091` | EFA stop identifier |
+| `STOP_ID` | `de:03241:1091` | EFA stop identifier (Kerstingstraße, Hannover) |
 | `FETCH_INTERVAL` | `30` s | How often to poll the API |
 | `REQUEST_TIMEOUT` | `10` s | HTTP request timeout |
 | `SCROLL_PAUSE` | `3.5` s | Hold time before scrolling |
