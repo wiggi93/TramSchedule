@@ -28,8 +28,9 @@ log = logging.getLogger(__name__)
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-STOP_ID          = "de:03241:1091"
+STATION_QUERY    = "Kerstingstraße Hannover"   # free-text "<stop> <city>" — resolved at startup
 API_URL          = "https://efa.de/efa/XML_DM_REQUEST"
+STOPFINDER_URL   = "https://efa.de/efa/XML_STOPFINDER_REQUEST"
 API_VERSION      = "10.6.14.22"
 STADTBAHN_CLASS  = 3     # product.class value for Stadtbahn lines
 
@@ -85,12 +86,35 @@ class BoardState:
 
 # ── API fetching ──────────────────────────────────────────────────────────────
 
-def fetch_stop_events() -> list[dict]:
-    log.info("Fetching departures for stop %s", STOP_ID)
+def find_stop_id(query: str) -> str:
+    """Resolve a free-text station query (e.g. 'Kerstingstraße Hannover') to an EFA stop ID."""
+    log.info("Resolving stop for query: %s", query)
+    params = {
+        "outputFormat": "rapidJSON",
+        "type_sf":      "any",
+        "name_sf":      query,
+        "version":      API_VERSION,
+    }
+    response = requests.get(STOPFINDER_URL, params=params, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    locations = response.json().get("locations") or []
+    stops = [loc for loc in locations if loc.get("type") == "stop" and loc.get("id")]
+    if not stops:
+        raise RuntimeError(f"No stops found for query: {query!r}")
+    best = stops[0]
+    log.info("Resolved %r → %s (%s, %s)",
+             query, best["id"],
+             best.get("disassembledName") or best.get("name"),
+             (best.get("parent") or {}).get("name"))
+    return best["id"]
+
+
+def fetch_stop_events(stop_id: str) -> list[dict]:
+    log.info("Fetching departures for stop %s", stop_id)
     params = {
         "outputFormat": "rapidJSON",
         "type_dm":      "any",
-        "name_dm":      STOP_ID,
+        "name_dm":      stop_id,
         "mode":         "direct",
         "useRealtime":  "1",
         "depType":      "stopEvents",
@@ -126,10 +150,10 @@ def parse_departures(events: list[dict]) -> list[Departure]:
 
 # ── Background fetch loop ─────────────────────────────────────────────────────
 
-def fetch_loop(board: BoardState) -> None:
+def fetch_loop(board: BoardState, stop_id: str) -> None:
     while True:
         try:
-            events     = fetch_stop_events()
+            events     = fetch_stop_events(stop_id)
             departures = parse_departures(events)
             board.update(departures)
             for dep in departures[:DISPLAY_ROWS]:
@@ -265,8 +289,14 @@ def debug_display(board: BoardState) -> None:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
+    try:
+        stop_id = find_stop_id(STATION_QUERY)
+    except Exception as e:
+        log.error("Could not resolve station %r: %s", STATION_QUERY, e)
+        sys.exit(1)
+
     board = BoardState()
-    fetch_thread = threading.Thread(target=fetch_loop, args=(board,), daemon=True)
+    fetch_thread = threading.Thread(target=fetch_loop, args=(board, stop_id), daemon=True)
     fetch_thread.start()
 
     if DEBUG:

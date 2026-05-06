@@ -82,7 +82,7 @@ All tuneable values are constants at the top of [`abfahrtstafel.py`](abfahrtstaf
 
 | Constant | Default | Description |
 |----------|---------|-------------|
-| `STOP_ID` | `de:03241:1091` | EFA stop identifier (Kerstingstraße, Hannover) |
+| `STATION_QUERY` | `Kerstingstraße Hannover` | Free-text "stop city" — resolved to an EFA stop ID at startup. Works for any city covered by `efa.de`. |
 | `FETCH_INTERVAL` | `30` s | How often to poll the API |
 | `REQUEST_TIMEOUT` | `10` s | HTTP request timeout |
 | `SCROLL_PAUSE` | `3.5` s | Hold time before scrolling |
